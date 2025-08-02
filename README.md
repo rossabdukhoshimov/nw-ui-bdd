@@ -32,11 +32,11 @@ It supports **UI and performance testing**, **accessibility compliance**, and **
 ## 🗂 Project Structure
 ```
 tests/
- ├── pages/               # Page Object files
- ├── step-definitions/    # Step definitions for BDD
+ ├── page_objects/        # Page Object files
  ├── features/            # Cucumber feature files
- ├── utils/               # Utility functions & Crow helpers
- ├── reports/             # Test reports (HTML, JSON, text)
+      ├── step-definitions/    # Step definitions for BDD
+ ├── crow/                # Utility functions & Crow helpers
+ ├── results/             # Test reports (HTML, JSON, text)
  └── nightwatch.conf.js   # Nightwatch configuration
 ```
 
@@ -45,8 +45,8 @@ tests/
 ## ⚡ Setup & Installation
 Clone the repository:
 ```bash
-git clone https://github.com/your-username/nightwatch-ui-framework.git
-cd nightwatch-ui-framework
+git clone https://github.com/rossabdukhoshimov/nw-ui-bdd.git
+cd nw-ui-bdd
 ```
 
 Install dependencies:
@@ -101,18 +101,11 @@ npx nightwatch --tag accessibility
 
 ## 🔄 Session Reuse
 The framework **caches login sessions** for faster execution.  
-Refresh or update session:
-```bash
-npm run refresh-session
-```
 
 ---
 
 ## 🔧 Maintenance Automation
-Update test account passwords and sync to **GitHub Actions secrets**:
-```bash
-npm run update-passwords
-```
+Update test account passwords and sync to **GitHub Actions secrets**
 
 ---
 
@@ -135,13 +128,13 @@ npm run update-passwords
 ---
 
 ## 👨‍💻 About Me
-Hi! I'm **Khamroz Abdukhoshimov**, a **QA Automation Engineer** with 8+ years of experience in building **UI, API, and performance testing frameworks**.  
+Hi! I'm **Khamroz Abdukhoshimov**, a **QA Automation Engineer** with 10+ years of experience in building **UI, API, and performance testing frameworks**.  
 I specialize in **BDD frameworks**, **CI/CD pipelines**, and **AI-driven automation strategies**.  
 Connect with me:  
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](https://linkedin.com/in/your-profile)  
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-black)](https://github.com/your-username)  
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black)](https://github.com/rossabdukhoshimov)  
 
 ---
 
 ## 📜 License
 This project is licensed under the **MIT License**.
+
