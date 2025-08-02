@@ -1,0 +1,6 @@
+Firefox tests need geckodriver
+It contains a npm package: "geckodriver" also a binary executable file "geckodriver"
+So please make sure following things:
+1. Make sure "geckodriver": "^4.3.2", is in package.json (prepare to update version)
+2. Make sure binary file "geckodriver" is in the repo. We put them in this geckodrier_executable folder. Also the binary file have different versions for different OS. We should down them for local and CI.
+3. Make sure the nightwatch.conf.js is configured properly for FireFox and FireFoxHeadless. Which means the webdriver->server_path value should point to the binary file. Here we use process.env.GECKO_PATH to save it. In different test config, we initialize different path for process.env.GECKO_PATH (according to OS)

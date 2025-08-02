@@ -1,0 +1,59 @@
+name: UAT end to end tests
+
+on:
+  repository_dispatch:
+    types: [uat_smoke]
+  workflow_call:
+    inputs:
+      log_level:
+        required: false
+        type: string
+        default: 'info'
+      browser:
+        required: false
+        type: string
+        default: 'chromeHeadless'
+      run_failed_tests_only:
+        required: false
+        type: string
+        default: 'FALSE'
+  workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Log level: debug, info, warning, error, mute'
+        required: false
+        type: string
+        default: 'info'
+      run_failed_tests_only:
+        description: 'Only run the failed tests'
+        required: false
+        type: string
+        default: 'FALSE'
+      browser:
+        description: 'Browser: chromeHeadless, firefoxHeadless, edge, safari'
+        required: false
+        type: string
+        default: 'chromeHeadless'
+
+env:
+  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  uat_smoke_tests:
+    uses: ./.github/workflows/ci_cuc_test_run.yml
+    with:
+      test_run_name: 'uat_smoke'
+      test_tag: 'uat_smoke'
+      test_browser: ${{ inputs.browser || github.event.inputs.browser || github.event.client_payload.BROWSER || 'chromeHeadless' }}
+      test_threads: 1
+      test_tier: 'uat'
+      log_level: ${{ inputs.log_level || github.event.inputs.log_level || github.event.client_payload.LOG_LEVEL || 'info' }}
+      skip_passed_tests: ${{ (inputs.run_failed_tests_only || github.event.client_payload.RUN_FAILED_TESTS_ONLY || 'FALSE') == 'TRUE' }}
+      max_runtime: 60
+      need_int_aws_credentials: true
+      need_uat_aws_credentials: true
+    secrets: inherit

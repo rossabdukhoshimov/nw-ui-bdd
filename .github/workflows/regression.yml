@@ -1,0 +1,218 @@
+name: Regression BDD and UAT deployment
+
+on:
+  repository_dispatch:
+    types: [regression_bdd]
+  workflow_dispatch:
+    inputs:
+      regression_threads:
+        description: 'The total parallel workers'
+        required: false
+        type: number
+        default: 8
+      force_run_tests:
+        description: 'Run tests even when INT and UAT are synced'
+        required: false
+        type: string
+        default: 'TRUE'
+      deploy_to_uat:
+        description: 'Deploy code to UAT if all tests pass'
+        required: false
+        type: string
+        default: 'FALSE'
+      run_failed_tests_only:
+        description: 'Only run the failed tests'
+        required: false
+        type: string
+        default: 'FALSE'
+      browser:
+        description: 'Browser the tests run on'
+        required: false
+        type: string
+        default: 'chromeHeadless'
+  schedule:
+    - cron: '0 6 * * 1-5'  # CodePush Regression, Every weekday at 2 am EST
+
+
+env:
+  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+  SAMPLE_SLACK_WEBHOOK: ${{ secrets.SAMPLE_SLACK_WEBHOOK }}
+  BROWSER: ${{ github.event.inputs.browser || github.event.client_payload.BROWSER || 'chromeHeadless' }}
+  FORCE_RUN_TESTS: ${{ github.event.inputs.force_run_tests || github.event.client_payload.FORCE_RUN_TESTS || 'FALSE' }}
+  DEPLOY_TO_UAT: ${{ github.event.inputs.deploy_to_uat || github.event.client_payload.DEPLOY_TO_UAT || 'FALSE' }}
+  REGRESSION_THREADS: ${{ github.event.inputs.regression_threads || github.event.client_payload.REGRESSION_THREADS || 16 }}
+  RUN_FAILED_TESTS_ONLY: ${{ github.event.inputs.run_failed_tests_only || github.event.client_payload.RUN_FAILED_TESTS_ONLY || 'FALSE' }}
+  JIRA_USER: ${{ secrets.JIRA_USER }}
+  JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+  JIRA_BOARD_ID: '69'
+  REGRESSION_TAG: 'regression_ui'
+  STANDALONE_REGRESSION_TAG: 'standalone_regression_ui'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  prepare_tests:
+    runs-on: ubuntu-latest
+    outputs:
+      browser: ${{ steps.check_and_prepare_tests.outputs.test_browser }}
+      threads: ${{ steps.check_and_prepare_tests.outputs.test_threads }}
+      need_to_run_tests: ${{ steps.check_and_prepare_tests.outputs.run_tests }}
+      int_has_new_version: ${{ steps.check_and_prepare_tests.outputs.int_has_new_version }}
+      sprint_test_tag: ${{ steps.check_and_prepare_tests.outputs.sprint_test_tag }}
+      regression_test_tag: ${{ steps.check_and_prepare_tests.outputs.regression_test_tag }}
+      standalone_regression_test_tag: ${{ steps.check_and_prepare_tests.outputs.standalone_regression_test_tag }}
+      rerun_only: ${{ steps.check_and_prepare_tests.outputs.rerun_only }}
+      deploy_to_uat: ${{ steps.check_and_prepare_tests.outputs.deploy_to_uat }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Common Setup
+        uses: ./.github/actions/setup_common
+        with:
+          install-nodejs: 'false'
+          int-aws-account-id: ${{ secrets.INT_AWS_ACCOUNT }}
+          int-aws-role-name: ${{ secrets.INT_AWS_ROLE }}
+          uat-aws-account-id: ${{ secrets.UAT_AWS_ACCOUNT }}
+          uat-aws-role-name: ${{ secrets.UAT_AWS_ROLE }}
+
+      - name: Check if necessary to run tests and build regression test run if necessary
+        id: check_and_prepare_tests
+        run: |
+          source scripts/source_all.sh
+          markdown_var_chart "Workflow Input:" "FORCE_RUN_TESTS,DEPLOY_TO_UAT,REGRESSION_THREADS,RUN_FAILED_TESTS_ONLY" >> "$GITHUB_STEP_SUMMARY"
+          int_has_new_version=$(new_version_in_int)
+          FORCE_RUN_TESTS=$(normalize_bool_string "$FORCE_RUN_TESTS")
+          RERUN_ONLY=$(normalize_bool_string "$RUN_FAILED_TESTS_ONLY")
+          run_tests=$(if [[ "$FORCE_RUN_TESTS" == 'TRUE' || "$RERUN_ONLY" == 'TRUE' ]]; then echo 'TRUE'; else echo "$int_has_new_version"; fi)
+          echo "Tests will run if FORCE_RUN_TESTS or RUN_FAILED_TESTS_ONLY is set to TRUE or there is new version code in INT"
+          echo "int_has_new_version=$int_has_new_version, FORCE_RUN_TESTS=$FORCE_RUN_TESTS, RUN_FAILED_TESTS_ONLY=$RERUN_ONLY, so run_tests=$run_tests"
+          echo "run_tests=$run_tests" >> $GITHUB_OUTPUT
+          echo "int_has_new_version=$int_has_new_version" >> $GITHUB_OUTPUT
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            browsers=("chromeHeadless" "firefoxHeadless" "edge")
+            export BROWSER=${browsers[$RANDOM % ${#browsers[@]}]}
+            echo "Since this is a build on schedule, I randomly picked a browser: $BROWSER"
+          else
+            echo "Since this is a build that was triggered, I use the browser provided in the trigger: $BROWSER"
+          fi
+          echo "test_browser=$BROWSER" >> $GITHUB_OUTPUT
+          echo "test_threads=$REGRESSION_THREADS" >> $GITHUB_OUTPUT
+          echo "regression_test_tag=$REGRESSION_TAG" >> $GITHUB_OUTPUT
+          echo "standalone_regression_test_tag=$STANDALONE_REGRESSION_TAG" >> $GITHUB_OUTPUT
+          echo "rerun_only=$RERUN_ONLY" >> $GITHUB_OUTPUT
+          echo "deploy_to_uat=$DEPLOY_TO_UAT" >> $GITHUB_OUTPUT
+          if [[ "$run_tests" == "TRUE" ]]; then
+            download_data_setup_folder
+            delete_all_participants regression_ui int
+            SPRINT_NAME="$(retrieve_current_sprint)"
+            SPRINT_TEST_TAG="${SPRINT_NAME}_ui"
+            echo "sprint_test_tag=$SPRINT_TEST_TAG" >> $GITHUB_OUTPUT
+            TICKET_TESTS=$(ci_cuc_test_summary_for_tickets "$REGRESSION_TAG" "$(retrieve_tickets_in_current_sprint)" "$SPRINT_NAME" "markdown")
+            echo "$TICKET_TESTS" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  wip_tests:
+    needs: prepare_tests
+    if: ${{ needs.prepare_tests.outputs.rerun_only != 'TRUE' && needs.prepare_tests.outputs.need_to_run_tests == 'TRUE' }}
+    uses: ./.github/workflows/ci_cuc_test_run.yml
+    with:
+      test_tier: 'int'
+      test_run_name: 'wip_ui'
+      test_tag: 'wip_ui'
+      test_browser: ${{ needs.prepare_tests.outputs.browser }}
+      test_threads: 1
+      allow_failures: true
+      max_runtime: 10
+      need_int_aws_credentials: true
+    secrets: inherit
+
+  sprint_tests:
+    needs: prepare_tests
+    if: ${{ needs.prepare_tests.outputs.need_to_run_tests == 'TRUE' }}
+    uses: ./.github/workflows/ci_cuc_test_run.yml
+    with:
+      test_tier: 'int'
+      test_run_name: ${{ needs.prepare_tests.outputs.sprint_test_tag }}
+      test_tag: ${{ needs.prepare_tests.outputs.sprint_test_tag }}
+      test_browser: ${{ needs.prepare_tests.outputs.browser }}
+      skip_passed_tests: ${{ needs.prepare_tests.outputs.rerun_only == 'TRUE' }}
+      test_threads: 1
+      max_runtime: 30
+      need_int_aws_credentials: true
+    secrets: inherit
+
+  regression_tests:
+    needs: prepare_tests
+    if: ${{ needs.prepare_tests.outputs.need_to_run_tests == 'TRUE' }}
+    uses: ./.github/workflows/ci_cuc_test_run.yml
+    with:
+      test_tier: 'int'
+      test_run_name: ${{ needs.prepare_tests.outputs.regression_test_tag }}
+      test_tag: ${{ needs.prepare_tests.outputs.regression_test_tag }}
+      test_exclusion_tag: ${{ needs.prepare_tests.outputs.sprint_test_tag }}
+      test_browser: ${{ needs.prepare_tests.outputs.browser }}
+      test_threads: ${{ fromJSON(needs.prepare_tests.outputs.threads) }}
+      skip_passed_tests: ${{ needs.prepare_tests.outputs.rerun_only == 'TRUE' }}
+      max_runtime: 119
+      need_int_aws_credentials: true
+    secrets: inherit
+
+  standalone_regression_tests:
+    needs: prepare_tests
+    if: ${{ needs.prepare_tests.outputs.need_to_run_tests == 'TRUE' }}
+    uses: ./.github/workflows/ci_cuc_test_run.yml
+    with:
+      test_tier: 'int'
+      test_run_name: ${{ needs.prepare_tests.outputs.standalone_regression_test_tag }}
+      test_tag: ${{ needs.prepare_tests.outputs.standalone_regression_test_tag }}
+      test_exclusion_tag: ${{ needs.prepare_tests.outputs.sprint_test_tag }}
+      test_browser: ${{ needs.prepare_tests.outputs.browser }}
+      test_threads: 1
+      skip_passed_tests: ${{ needs.prepare_tests.outputs.rerun_only == 'TRUE' }}
+      max_runtime: 30
+      need_int_aws_credentials: true
+    secrets: inherit
+
+  deploy_to_uat:
+    runs-on: ubuntu-latest
+    needs:
+      - sprint_tests
+      - regression_tests
+      - standalone_regression_tests
+      - prepare_tests
+    if:  ${{ needs.prepare_tests.outputs.deploy_to_uat == 'TRUE' }}
+    steps:
+      # Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Common Setup
+        uses: ./.github/actions/setup_common
+        with:
+          install-nodejs: 'false'
+          int-aws-account-id: ${{ secrets.INT_AWS_ACCOUNT }}
+          int-aws-role-name: ${{ secrets.INT_AWS_ROLE }}
+          uat-aws-account-id: ${{ secrets.UAT_AWS_ACCOUNT }}
+          uat-aws-role-name: ${{ secrets.UAT_AWS_ROLE }}
+
+      - name: Deploy To UAT
+        run: |
+          source scripts/source_all.sh
+          gap_analysis
+          sync_applications_to_uat
+          notify_uat_new_version
+        shell: bash
+
+  trigger_uat_smoke_tests:
+    needs:
+      - deploy_to_uat
+    if: success()
+    uses: ./.github/workflows/uat_smoke.yml
+    with:
+      log_level: "info"
+      browser: ${{ needs.prepare_tests.outputs.browser }}
+    secrets: inherit
+

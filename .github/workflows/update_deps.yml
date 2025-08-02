@@ -1,0 +1,63 @@
+name: Update Dependencies (Node + Ruby)
+
+on:
+  repository_dispatch:
+    types: [ update_deps ]
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+env:
+  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install npm-check-updates
+        run: npm install -g npm-check-updates
+
+      - name: Update package.json
+        run: |
+          ncu -u
+          npm install --package-lock=false
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@a4effe49ee8ee5b8b5091268c473a4628afb5651
+        with:
+          ruby-version: 3.4.4 # adjust to match your project
+          bundler-cache: false
+
+      - name: Check Ruby gem updates
+        run: |
+          echo "Checking outdated gems..."
+          bundle install --without development test
+          bundle update --conservative 
+          echo "Outdated gems after update check:"
+          bundle outdated --strict || true
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: update npm dependencies"
+          branch: update-deps
+          title: "Update Node.js and Ruby dependencies"
+          body: |
+            Automated update:
+            - Node.js root dependencies
+            - Ruby Gemfile (Gemfile.lock excluded)
+          add-paths: |
+            package.json
+            Gemfile

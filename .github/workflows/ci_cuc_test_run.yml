@@ -1,0 +1,290 @@
+name: Trigger a CI CUC test run
+
+on:
+  workflow_call:
+    inputs:
+      test_tier:
+        description: 'Run test in int or uat'
+        type: string
+        required: false
+        default: 'int'
+      test_run_name:
+        description: 'Give a name of the selected tests, this will be used to store the test metadata in the test manager'
+        type: string
+        required: true
+      test_tag:
+        description: 'Tag used to include specific tests'
+        type: string
+        required: true
+      test_exclusion_tag:
+        description: 'Tag to exclude specific tests from the run, this has higher priority than test_tag'
+        type: string
+        required: false
+        default: ''
+      test_threads:
+        description: 'Number of threads to use for parallel test execution for each test runner.'
+        type: number
+        required: false
+        default: 4
+      max_threads_per_runner:
+        description: 'This workflow will automatically bring up extra runner if total threads is to high for one runner'
+        type: number
+        required: false
+        default: 4
+      skip_passed_tests:
+        description: 'If true, only reset the status of failed or running tests before the test run; keep passed tests as-is.'
+        type: boolean
+        required: false
+        default: false
+      allow_failures:
+        description: 'If true, the job will not raise error.'
+        type: boolean
+        required: false
+        default: false
+      log_level:
+        description: 'Logging verbosity level (debug,info,warning,error,mute).'
+        type: string
+        required: false
+        default: 'info'
+      max_runtime:
+        description: 'Maximum allowed test runtime in minutes before timeout.'
+        type: number
+        required: false
+        default: 60
+      need_int_aws_credentials:
+        description: 'Whether to generate AWS credentials for the INT environment (true/false).'
+        type: boolean
+        required: false
+        default: false
+      need_uat_aws_credentials:
+        description: 'Whether to generate AWS credentials for the UAT environment (true/false).'
+        type: boolean
+        required: false
+        default: false
+      test_browser:
+        description: 'If this workflow is used to run UI test, specify the browser. It does not take effect for API testing'
+        type: string
+        required: false
+        default: ''
+
+env:
+  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+  AWS_DEFAULT_REGION: 'us-east-1'
+  MOCKLAB_TOKEN: ${{ secrets.MOCKLAB_TOKEN }}
+  TEST_ENV:  ${{ inputs.test_tier }}
+  TEST_RUN_NAME: ${{ inputs.test_run_name }}
+  TEST_TAG: ${{ inputs.test_tag }}
+  TEST_TAG_EXCLUSION: ${{ inputs.test_exclusion_tag }}
+  MAX_THREADS_PER_RUNNER: ${{ inputs.max_threads_per_runner }}
+  TOTAL_TEST_THREADS: ${{ inputs.test_threads }}
+  SKIP_PASSED_TESTS: ${{ inputs.skip_passed_tests }}
+  ALLOW_FAILURES: ${{ inputs.allow_failures }}
+  LOG_LEVEL: ${{ inputs.log_level }}
+  BROWSER: ${{ inputs.test_browser }}
+
+  INT_AWS_KEY_EXPIRE_SECONDS: '3600'
+  INT_OKTA_CLIENT_SECRET_ADMINISTRATOR: ${{ secrets.INT_OKTA_CLIENT_SECRET_ADMINISTRATOR }}
+  INT_OKTA_CLIENT_SECRET_AR_REVIEWER: ${{ secrets.INT_OKTA_CLIENT_SECRET_AR_REVIEWER }}
+  INT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN: ${{ secrets.INT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN }}
+  INT_OKTA_CLIENT_SECRET_ENROLLING_SITE: ${{ secrets.INT_OKTA_CLIENT_SECRET_ENROLLING_SITE }}
+  INT_OKTA_CLIENT_ID_ENROLLING_SITE: ${{ secrets.INT_OKTA_CLIENT_ID_ENROLLING_SITE }}
+  INT_OKTA_CLIENT_ID_BIOINFORMATICIAN: ${{ secrets.INT_OKTA_CLIENT_ID_BIOINFORMATICIAN }}
+  INT_OKTA_CLIENT_ID_AR_REVIEWER: ${{ secrets.INT_OKTA_CLIENT_ID_AR_REVIEWER }}
+  INT_OKTA_CLIENT_ID_ADMINISTRATOR: ${{ secrets.INT_OKTA_CLIENT_ID_ADMINISTRATOR }}
+  UAT_OKTA_CLIENT_ID_ADMINISTRATOR: ${{ secrets.UAT_OKTA_CLIENT_ID_ADMINISTRATOR }}
+  UAT_OKTA_CLIENT_ID_AR_REVIEWER: ${{ secrets.UAT_OKTA_CLIENT_ID_AR_REVIEWER }}
+  UAT_OKTA_CLIENT_ID_BIOINFORMATICIAN: ${{ secrets.UAT_OKTA_CLIENT_ID_BIOINFORMATICIAN }}
+  UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR: ${{ secrets.UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR }}
+  UAT_OKTA_CLIENT_SECRET_AR_REVIEWER: ${{ secrets.UAT_OKTA_CLIENT_SECRET_AR_REVIEWER }}
+  UAT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN: ${{ secrets.UAT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN }}
+  SAMPLE_UAT_OKTA_PASSWORD_BIOINFORMATICIAN: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_BIOINFORMATICIAN }}
+  SAMPLE_UAT_OKTA_PASSWORD_AR_REVIEWER: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_AR_REVIEWER }}
+  SAMPLE_UAT_OKTA_PASSWORD_ADMIN: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_ADMIN }}
+  SAMPLE_UAT_OKTA_AUTH_ISSUER_URL: ${{ secrets.SAMPLE_UAT_OKTA_AUTH_ISSUER_URL }}
+  SAMPLE_UAT_INTERNAL_URL: ${{ secrets.SAMPLE_UAT_INTERNAL_URL }}
+  SAMPLE_INT_OKTA_PASSWORD_PATHOLOGY_REPORT_VIEWER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_PATHOLOGY_REPORT_VIEWER }}
+  SAMPLE_INT_OKTA_PASSWORD_PATHOLOGY_REPORT_UPLOADER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_PATHOLOGY_REPORT_UPLOADER }}
+  SAMPLE_INT_OKTA_PASSWORD_LPO_ALLIANCE: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_LPO_ALLIANCE }}
+  SAMPLE_INT_OKTA_PASSWORD_LPO_TT: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_LPO_TT }}
+  SAMPLE_INT_OKTA_PASSWORD_LPO_MSP: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_LPO_MSP }}
+  SAMPLE_INT_OKTA_PASSWORD_LPO_TT_MSP: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_LPO_TT_MSP }}
+  SAMPLE_INT_OKTA_PASSWORD_CLIA_REPORT_VIEWER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_CLIA_REPORT_VIEWER }}
+  SAMPLE_INT_OKTA_PASSWORD_CLIA_REPORT_UPLOADER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_CLIA_REPORT_UPLOADER }}
+  SAMPLE_INT_OKTA_PASSWORD_BIOINFORMATICIAN: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_BIOINFORMATICIAN }}
+  SAMPLE_INT_OKTA_PASSWORD_AR_REVIEWER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_AR_REVIEWER }}
+  SAMPLE_INT_OKTA_PASSWORD_ADMIN: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_ADMIN }}
+  SAMPLE_INT_OKTA_AUTH_ISSUER_URL: ${{ secrets.SAMPLE_INT_OKTA_AUTH_ISSUER_URL }}
+  SAMPLE_INT_INTERNAL_URL: ${{ secrets.SAMPLE_INT_INTERNAL_URL }}
+  TPS_UAT_OKTA_AUTH_ISSUER_URL: ${{ secrets.TPS_UAT_OKTA_AUTH_ISSUER_URL }}
+  TPS_UAT_OKTA_CLIENT_ID_ADMINISTRATOR: ${{ secrets.TPS_UAT_OKTA_CLIENT_ID_ADMINISTRATOR }}
+  TPS_UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR: ${{ secrets.TPS_UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR }}
+  SAMPLE_SLACK_WEBHOOK: ${{ secrets.SAMPLE_SLACK_WEBHOOK }}
+  SAMPLE_INT_OKTA_USERNAME_ADMIN: 'combo_administrator@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_AR_REVIEWER: 'combo_assignment_reviewer@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_BIOINFORMATICIAN: 'combo_bioinformatician@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_CLIA_REPORT_UPLOADER: 'combo_test_clia_report_uploader@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_CLIA_REPORT_VIEWER: 'combo_test_clia_report_viewer@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_LPO_ALLIANCE: 'combo_test_lpo@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_LPO_TT: 'combo_test_lpo_ecog_tt@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_LPO_MSP: 'combo_test_lpo_ecog_msp@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_LPO_TT_MSP: 'combo_test_lpo_ecog_tt_msp@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_PATHOLOGY_REPORT_UPLOADER: 'combo_test_pathology_report_uploader@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_PATHOLOGY_REPORT_VIEWER: 'combo_test_pathology_report_viewer@bioappdev.org'
+  SAMPLE_UAT_OKTA_USERNAME_ADMIN: 'combo_administrator@bioappdev.org'
+  SAMPLE_UAT_OKTA_USERNAME_AR_REVIEWER: 'combo_assignment_reviewer@bioappdev.org'
+  SAMPLE_UAT_OKTA_USERNAME_BIOINFORMATICIAN: 'combo_bioinformatician@bioappdev.org'
+  MOCKLAB_URL_THIRD_PARTY: 'http://THIRD_PARTY.wiremockapi.cloud'
+  MOCKLAB_URL_MIDDLEWARE: 'http://middleware-for-sample.wiremockapi.cloud'
+  MOCKLAB_URL_NOTIFICATION: 'http://notification-api.wiremockapi.cloud'
+  MOCKLAB_URL_TP_FOR_CM: 'http://treatment-protocol-for-sample.wiremockapi.cloud'
+  PROJECT_NAME: 'sample'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  prepare_test_run:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix_expression: ${{ steps.test_run_prep.outputs.matrix_expression }}
+      skip_tests: ${{ steps.test_run_prep.outputs.skip_tests }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Common Setup
+        uses: ./.github/actions/setup_common
+        with:
+          install-nodejs: false
+          int-aws-account-id: ${{ secrets.INT_AWS_ACCOUNT }}
+          int-aws-role-name: ${{ secrets.INT_AWS_ROLE }}
+
+      - name: Check inputs values
+        run: |
+          source scripts/cicd_functions.sh
+          validate_options "$TEST_ENV" "int,uat"
+          if [[ "$BROWSER" != '' ]]; then validate_options "$BROWSER" "chromeHeadless,firefoxHeadless,edge,safari"; fi
+          validate_options "$LOG_LEVEL" "debug,info,warning,error,mute"
+          markdown_var_chart "Workflow Input:" "TEST_ENV,TEST_RUN_NAME,TEST_TAG,TEST_TAG_EXCLUSION,BROWSER,TOTAL_TEST_THREADS,MAX_THREADS_PER_RUNNER,SKIP_PASSED_TESTS,ALLOW_FAILURES,LOG_LEVEL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare Test Run
+        id: test_run_prep
+        run: |
+          source scripts/source_all.sh
+          if [[ $SKIP_PASSED_TESTS == 'true' ]]; then
+            ci_cuc_reset_test_run_keep_passed "$TEST_RUN_NAME" "$TEST_TAG" "$TEST_TAG_EXCLUSION"
+            TEST_PASSED=$(ci_cuc_test_run_passed "$TEST_RUN_NAME")
+            echo "skip_tests=$TEST_PASSED" >> $GITHUB_OUTPUT
+          else
+            ci_cuc_reset_test_run "$TEST_RUN_NAME" "$TEST_TAG" "$TEST_TAG_EXCLUSION"
+          fi
+          GROUP_LIST=$(runner_list "$TOTAL_TEST_THREADS" "$MAX_THREADS_PER_RUNNER")
+          echo "matrix_expression=$GROUP_LIST" >> $GITHUB_OUTPUT
+
+  trigger_test_run:
+    runs-on: ${{ inputs.test_browser == 'safari' && 'macos-latest' || 'ubuntu-latest' }}
+    needs: prepare_test_run
+    if: ${{ needs.prepare_test_run.outputs.skip_tests != 'true' }}
+    timeout-minutes: ${{ inputs.max_runtime }}
+    strategy:
+      matrix:
+        threads: ${{ fromJSON(needs.prepare_test_run.outputs.matrix_expression) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Common Setup
+        uses: ./.github/actions/setup_common
+        with:
+          install-nodejs: ${{ inputs.test_browser != '' }}
+          int-aws-account-id: ${{ inputs.need_int_aws_credentials && secrets.INT_AWS_ACCOUNT || '' }}
+          int-aws-role-name: ${{ inputs.need_int_aws_credentials && secrets.INT_AWS_ROLE || '' }}
+          int-aws-expire-seconds: ${{ env.INT_AWS_KEY_EXPIRE_SECONDS }}
+          uat-aws-account-id: ${{ inputs.need_uat_aws_credentials && secrets.UAT_AWS_ACCOUNT || '' }}
+          uat-aws-role-name: ${{ inputs.need_uat_aws_credentials && secrets.UAT_AWS_ROLE || '' }}
+          install-gecko: ${{ inputs.test_browser == 'firefoxHeadless' }}
+          install-edge: ${{ inputs.test_browser == 'edge' }}
+
+      - name: Run tests
+        id: run_tests
+        run: |
+          source scripts/source_all.sh
+          download_data_setup_folder
+          ci_cuc_setup_results_directory
+          if [[ "$BROWSER" != '' ]]; then setup_nightwatch "test_config/${TEST_ENV}_ci.sh" "$BROWSER"; fi
+          echo "Running with $TEST_RUN_NAME in ${{ matrix.threads }} threads"
+          ci_cuc_test_run_in_parallel "$TEST_RUN_NAME" "${{ matrix.threads }}"
+        continue-on-error: true
+
+      - name: Deprecated Nodejs Warnings If Any
+        run: |
+          source scripts/source_all.sh
+          if ls "$PROJECT_ROOT/deprecation_logs"/deprecation_log_*.txt 1> /dev/null 2>&1; then
+            cat "$PROJECT_ROOT/deprecation_logs"/deprecation_log_*.txt > "$PROJECT_ROOT/deprecation_logs/deprecation_log.txt"
+            notify_deprecation_warnings "$PROJECT_ROOT/deprecation_logs/deprecation_log.txt"
+          else
+            echo "No deprecation logs found, skipping Slack notification."
+          fi  
+
+  rerun_and_report:
+    runs-on: ${{ inputs.test_browser == 'safari' && 'macos-latest' || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.max_runtime }}
+    if: ${{ !cancelled() }}
+    needs: trigger_test_run
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Common Setup
+        uses: ./.github/actions/setup_common
+        with:
+          install-nodejs: ${{ inputs.test_browser != '' }}
+          int-aws-account-id: ${{ inputs.need_int_aws_credentials && secrets.INT_AWS_ACCOUNT || '' }}
+          int-aws-role-name: ${{ inputs.need_int_aws_credentials && secrets.INT_AWS_ROLE || '' }}
+          uat-aws-account-id: ${{ inputs.need_uat_aws_credentials && secrets.UAT_AWS_ACCOUNT || '' }}
+          uat-aws-role-name: ${{ inputs.need_uat_aws_credentials && secrets.UAT_AWS_ROLE || '' }}
+          install-gecko: ${{ inputs.test_browser == 'firefoxHeadless' }}
+          install-edge: ${{ inputs.test_browser == 'edge' }}
+
+      - name: ReRun tests
+        id: rerun_tests
+        run: |
+          source scripts/source_all.sh
+          download_data_setup_folder
+          ci_cuc_setup_results_directory
+          echo "RESULT_PATH=$RESULT_PATH" >> $GITHUB_ENV
+          if [[ "$BROWSER" != '' ]]; then setup_nightwatch "test_config/${TEST_ENV}_ci.sh" "$BROWSER"; fi
+          for DOWNGRADE_SCALE in 4 100; do
+            TEST_PASSED=$(ci_cuc_test_run_passed "$TEST_RUN_NAME")
+            if [[ $TEST_PASSED != "true" ]]; then
+              low_threads=$(calculate_threads_downgrade "$TOTAL_TEST_THREADS" "$DOWNGRADE_SCALE")
+              echo "There are still failures in $TEST_RUN_NAME, re-running with $low_threads thread(s)..."
+              ci_cuc_reset_test_run_keep_passed "$TEST_RUN_NAME" "$TEST_TAG" "$TEST_TAG_EXCLUSION"
+              ci_cuc_test_run_in_parallel "$TEST_RUN_NAME" "$low_threads" "true"
+            fi
+          done
+        continue-on-error: true
+        shell: bash
+
+      - name: Print Test Report
+        if: ${{ steps.rerun_tests.outcome != 'canceled' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: ${{ env.RESULT_PATH }}/**/*.xml
+          show: "all"
+
+      - name: Summarize tests
+        if: ${{ steps.rerun_tests.outcome != 'canceled' }}
+        run: |
+          source scripts/source_all.sh
+          report=$(ci_cuc_markdown_test_report "$TEST_RUN_NAME")
+          echo "$report" >> "$GITHUB_STEP_SUMMARY"
+          if [[ $ALLOW_FAILURES != "true" ]]; then
+            TEST_PASSED=$(ci_cuc_test_run_passed "$TEST_RUN_NAME")
+            if [[ $TEST_PASSED != "true" ]]; then
+              echo "There are failures in $TEST_RUN_NAME"
+              exit 1
+            fi
+          fi
+        shell: bash

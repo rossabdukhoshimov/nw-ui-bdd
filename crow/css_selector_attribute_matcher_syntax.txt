@@ -1,0 +1,35 @@
+/* Internal links, beginning with "#" */
+a[href^="#"]
+
+/* Links with "example" anywhere as SUBSTRING in the URL */
+a[href*="active"] // can match <li><a href="active.com">Internal link</a></li> and <li><a href="inactive.com">Internal link</a></li>
+
+/* Links with "example" anywhere as a WORD in the URL */
+a[href~="active"]// can match <li><a href="active.com">Internal link</a></li> BUT NOT <li><a href="inactive.com">Internal link</a></li>
+
+/* Links with "insensitive" anywhere in the URL,
+   regardless of capitalization */
+a[href*="insensitive" i]
+
+/* Links with "cAsE" anywhere in the URL,
+with matching capitalization */
+a[href*="cAsE" s]
+
+/* Links that end in ".org" */
+a[href$=".org"]
+
+/* Links that start with "https://" and end in ".org" */
+a[href^="https://"][href$=".org"]
+
+/* Links that IS "click" or starts with "click" then immediately followed by a '-' ("click-") */
+a[href|="click"]
+
+
+// the  >  between objects means immediate child
+div > a // means the "a" is a direct child under div
+
+// without  >   means any child or grand child
+div[arial-label='participantButton'] div.participantText // means I need the div whose class is participantText at any level under a div whose arial-label is participantButton
+
+// [] is attribute matcher
+nav[aria-label*="Page Navigation"] // means a nav element, whose aria-label attribute contains "Page Navigation"

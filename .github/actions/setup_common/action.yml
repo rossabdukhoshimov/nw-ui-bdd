@@ -1,0 +1,186 @@
+name: Setup Common Environment
+description: Optionally install Ruby, Python, AWS CLI, and project dependencies
+inputs:
+  install-ruby:
+    description: "Set to 'true' to install Ruby and gems"
+    required: false
+    default: 'true'
+  install-python:
+    description: "Set to 'true' to install Python and project requirements"
+    required: false
+    default: 'true'
+  install-nodejs:
+    description: "Set to 'true' to install NodeJS and project requirements"
+    required: false
+    default: 'true'
+  install-aws-cli:
+    description: "Set to 'true' to install AWS CLI (only)"
+    required: false
+    default: 'true'
+  ruby-version:
+    description: "Ruby version to install"
+    required: false
+    default: '3.4.4'
+  python-version:
+    description: "Python version to install"
+    required: false
+    default: '3.12'
+  nodejs-version:
+    description: "NodeJS version to install"
+    required: false
+    default: '22'
+  install-gecko:
+    description: "Set to 'true' to install GeckoDriver for Firefox automation"
+    required: false
+    default: 'false'
+  install-edge:
+    description: "Set to 'true' to install GeckoDriver for MS Edge automation"
+    required: false
+    default: 'false'
+  git-token:
+    description: "Some steps in this action need git token"
+    required: false
+    default: ''
+  int-aws-account-id:
+    description: "If AWS credential for INT is needed provide account id"
+    required: false
+    default: ''
+  int-aws-role-name:
+    description: "If AWS credential for INT is needed provide role name"
+    required: false
+    default: ''
+  int-aws-expire-seconds:
+    description: "The default is 1 hour, only extend that if your aws configure allow longer expire time, otherwise the keys will not be generated"
+    required: false
+    default: '3600'
+  uat-aws-account-id:
+    description: "If AWS credential for UAT is needed provide account id"
+    required: false
+    default: ''
+  uat-aws-role-name:
+    description: "If AWS credential for UAT is needed provide role name"
+    required: false
+    default: ''
+  uat-aws-expire-seconds:
+    description: "The default is 1 hour, only extend that if your aws configure allow longer expire time, otherwise the keys will not be generated"
+    required: false
+    default: '3600'
+  aws-region:
+    description: "AWS region"
+    required: false
+    default: 'us-east-1'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Ruby
+      if: ${{ inputs.install-ruby == 'true' }}
+      uses: ruby/setup-ruby@a4effe49ee8ee5b8b5091268c473a4628afb5651
+      with:
+        ruby-version: ${{ inputs.ruby-version }}
+        bundler-cache: true
+
+
+    - name: Setup Python
+      if: ${{ inputs.install-python == 'true' || inputs.install-aws-cli == 'true' }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Project Python Dependencies
+      if: ${{ inputs.install-python == 'true' }}
+      run: |
+        pip install -U pip    
+        if [ "${{ inputs.install-aws-cli }}" = "true" ]; then pip install awscli --upgrade; fi    
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      shell: bash
+
+    - name: Setup Node.js
+      if: ${{ inputs.install-nodejs == 'true' }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.nodejs-version }}
+
+    - name: Install Project NodeJS Dependencies
+      if: ${{ inputs.install-nodejs == 'true' }}
+      run: |
+        npm install
+      shell: bash
+
+    - name: Setup geckodriver
+      if: ${{ inputs.install-gecko == 'true' }}
+      uses: browser-actions/setup-geckodriver@eb8b0670366f719ca31703766a8cb7e3ea2c56ed
+      with:
+        token: ${{ inputs.git-token }}
+
+    - name: install MS Edge
+      if: ${{ inputs.install-edge == 'true' }}
+      uses: browser-actions/setup-edge@5a55d8fc0f012aa6e16b582df5bf9d6274bda7da
+
+    - name: configure UAT AWS credentials
+      if: ${{ inputs.uat-aws-account-id != '' && inputs.uat-aws-role-name != '' }}
+      id: aws_creds_uat
+      uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
+      with:
+        role-to-assume: ${{ 'arn:aws:iam::' }}${{ inputs.uat-aws-account-id }}${{ ':role/' }}${{ inputs.uat-aws-role-name }}
+        aws-region: ${{ inputs.aws-region }}
+        role-duration-seconds: ${{ fromJSON(inputs.uat-aws-expire-seconds) }}
+        output-credentials: true
+
+    - name: Setting UAT AWS ENV variables
+      env:
+        UAT_CLIENT_ID: ${{ steps.aws_creds_uat.outputs.aws-access-key-id }}
+        UAT_CLIENT_SECRET: ${{ steps.aws_creds_uat.outputs.aws-secret-access-key }}
+        UAT_TOKEN: ${{ steps.aws_creds_uat.outputs.aws-session-token }}
+        AWS_REGION: ${{ inputs.aws-region }}
+      if: ${{ inputs.uat-aws-account-id != '' && inputs.uat-aws-role-name != '' }}
+      # 1. the reason of using output-credentials in the step aws_creds_uat is to avoid use ENV directly in this step
+      # 2. the reason of setting env in this step is to avoid directly using inline variables in this step
+      # 3. the reason of removing new lines from the values is to avoid attackers to inject code
+      # all the above 3 solutions must be applied so security scan will not bring up issues
+      run: |
+        SANITIZED_UAT_ACCESS_KEY_ID=$(echo "$UAT_CLIENT_ID" | tr -d '\n')
+        SANITIZED_UAT_SECRET_ACCESS_KEY=$(echo "$UAT_CLIENT_SECRET" | tr -d '\n')
+        SANITIZED_UAT_SESSION_TOKEN=$(echo "$UAT_TOKEN" | tr -d '\n')
+        SANITIZED_AWS_DEFAULT_REGION=$(echo "$AWS_REGION" | tr -d '\n')
+
+        echo "UAT_AWS_ACCESS_KEY_ID=$SANITIZED_UAT_ACCESS_KEY_ID" >> $GITHUB_ENV
+        echo "UAT_AWS_SECRET_ACCESS_KEY=$SANITIZED_UAT_SECRET_ACCESS_KEY" >> $GITHUB_ENV
+        echo "UAT_AWS_SESSION_TOKEN=$SANITIZED_UAT_SESSION_TOKEN" >> $GITHUB_ENV
+        echo "AWS_DEFAULT_REGION=$SANITIZED_AWS_DEFAULT_REGION" >> $GITHUB_ENV
+      shell: bash
+
+    - name: configure INT AWS credentials
+      if: ${{ inputs.int-aws-account-id != '' && inputs.int-aws-role-name != '' }}
+      id: aws_creds_int
+      uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
+      with:
+        role-to-assume: ${{ 'arn:aws:iam::' }}${{ inputs.int-aws-account-id }}${{ ':role/' }}${{ inputs.int-aws-role-name }}
+        aws-region: ${{ inputs.aws-region }}
+        role-duration-seconds: ${{ fromJSON(inputs.int-aws-expire-seconds) }}
+        output-credentials: true
+
+    - name: Setting INT AWS ENV variables
+      env:
+        INT_CLIENT_ID: ${{ steps.aws_creds_int.outputs.aws-access-key-id }}
+        INT_CLIENT_SECRET: ${{ steps.aws_creds_int.outputs.aws-secret-access-key }}
+        INT_TOKEN: ${{ steps.aws_creds_int.outputs.aws-session-token }}
+        AWS_REGION: ${{ inputs.aws-region }}
+      if: ${{ inputs.int-aws-account-id != '' && inputs.int-aws-role-name != '' }}
+      # 1. the reason of using output-credentials in the step aws_creds_uat is to avoid use ENV directly in this step
+      # 2. the reason of setting env in this step is to avoid directly using inline variables in this step
+      # 3. the reason of removing new lines from the values is to avoid attackers to inject code
+      # all the above 3 solutions must be applied so security scan will not bring up issues
+      run: |
+        SANITIZED_INT_ACCESS_KEY_ID=$(echo "$INT_CLIENT_ID" | tr -d '\n')
+        SANITIZED_INT_SECRET_ACCESS_KEY=$(echo "$INT_CLIENT_SECRET" | tr -d '\n')
+        SANITIZED_INT_SESSION_TOKEN=$(echo "$INT_TOKEN" | tr -d '\n')
+        SANITIZED_AWS_DEFAULT_REGION=$(echo "$AWS_REGION" | tr -d '\n')
+
+        echo "INT_AWS_ACCESS_KEY_ID=$SANITIZED_INT_ACCESS_KEY_ID" >> $GITHUB_ENV
+        echo "INT_AWS_SECRET_ACCESS_KEY=$SANITIZED_INT_SECRET_ACCESS_KEY" >> $GITHUB_ENV
+        echo "INT_AWS_SESSION_TOKEN=$SANITIZED_INT_SESSION_TOKEN" >> $GITHUB_ENV
+        echo "AWS_DEFAULT_REGION=$SANITIZED_AWS_DEFAULT_REGION" >> $GITHUB_ENV
+      shell: bash
+
+

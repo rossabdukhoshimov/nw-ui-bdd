@@ -1,0 +1,26 @@
+name: GitHub Security Alerts for Jira
+on:
+#  schedule:
+#    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syncSecurityAlerts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Sync security alerts to Jira issues"
+        uses: reload/github-security-jira@dcbf566c2462a7432e03900a447c68cfd6213d26
+        env:
+          GH_SECURITY_TOKEN: '${{ secrets.GH_SECURITY_TOKEN }}'
+          JIRA_TOKEN: '${{ secrets.JIRA_TOKEN }}'
+          JIRA_HOST: '${{ secrets.JIRA_HOST }}'
+          JIRA_USER: '${{ secrets.JIRA_USER }}'
+          JIRA_PROJECT: 'CBME'
+          JIRA_ISSUE_LABELS: '${{ secrets.JIRA_ISSUE_LABELS }}'
+          JIRA_ISSUE_TYPE: ${{ secrets.JIRA_ISSUE_TYPE }}
+          JIRA_WATCHERS: patrick.leblanc@bioappdev.org,christina.coppola@bioappdev.org
+          JIRA_RESTRICTED_COMMENT_ROLE: '${{ secrets.JIRA_RESTRICTED_COMMENT_ROLE }}'
+          SYNC_DIRECTION: 'gh2jira'

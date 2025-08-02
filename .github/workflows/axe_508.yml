@@ -1,0 +1,39 @@
+name: Axe 508 Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_threads:
+        description: 'Test can run in multi threads'
+        required: false
+        type: number
+        default: 4
+      browser:
+        description: 'Browser: chromeHeadless, firefoxHeadless, edge, safari'
+        required: false
+        type: string
+        default: 'chromeHeadless'
+  repository_dispatch:
+    types: [axe_508]
+#  schedule:
+#    - cron: '0 13 * * 0'  # Runs at 8:00AM EST every Sunday
+
+
+env:
+  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+
+permissions:
+  contents: read
+
+jobs:
+  axe_tests:
+    uses: ./.github/workflows/ci_cuc_test_run.yml
+    with:
+      test_run_name: 'axe'
+      test_tag: 'axe_508'
+      test_browser:  ${{ github.event.inputs.browser || github.event.client_payload.BROWSER || 'chromeHeadless' }}
+      test_threads: ${{ github.event.inputs.test_threads || fromJSON(github.event.client_payload.TEST_THREADS) || 4 }}
+      test_tier: 'int'
+      need_int_aws_credentials: true
+      max_runtime: 40
+    secrets: inherit

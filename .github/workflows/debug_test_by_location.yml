@@ -1,0 +1,146 @@
+name: Debug a test at given location
+
+on:
+  repository_dispatch:
+    types:
+      - debug_test_by_location
+
+
+env:
+  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+  AWS_DEFAULT_REGION: 'us-east-1'
+  INT_OKTA_CLIENT_SECRET_ADMINISTRATOR: ${{ secrets.INT_OKTA_CLIENT_SECRET_ADMINISTRATOR }}
+  INT_OKTA_CLIENT_SECRET_AR_REVIEWER: ${{ secrets.INT_OKTA_CLIENT_SECRET_AR_REVIEWER }}
+  INT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN: ${{ secrets.INT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN }}
+  INT_OKTA_CLIENT_SECRET_ENROLLING_SITE: ${{ secrets.INT_OKTA_CLIENT_SECRET_ENROLLING_SITE }}
+  INT_OKTA_CLIENT_ID_ENROLLING_SITE: ${{ secrets.INT_OKTA_CLIENT_ID_ENROLLING_SITE }}
+  INT_OKTA_CLIENT_ID_BIOINFORMATICIAN: ${{ secrets.INT_OKTA_CLIENT_ID_BIOINFORMATICIAN }}
+  INT_OKTA_CLIENT_ID_AR_REVIEWER: ${{ secrets.INT_OKTA_CLIENT_ID_AR_REVIEWER }}
+  INT_OKTA_CLIENT_ID_ADMINISTRATOR: ${{ secrets.INT_OKTA_CLIENT_ID_ADMINISTRATOR }}
+  UAT_OKTA_CLIENT_ID_ADMINISTRATOR: ${{ secrets.UAT_OKTA_CLIENT_ID_ADMINISTRATOR }}
+  UAT_OKTA_CLIENT_ID_AR_REVIEWER: ${{ secrets.UAT_OKTA_CLIENT_ID_AR_REVIEWER }}
+  UAT_OKTA_CLIENT_ID_BIOINFORMATICIAN: ${{ secrets.UAT_OKTA_CLIENT_ID_BIOINFORMATICIAN }}
+  UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR: ${{ secrets.UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR }}
+  UAT_OKTA_CLIENT_SECRET_AR_REVIEWER: ${{ secrets.UAT_OKTA_CLIENT_SECRET_AR_REVIEWER }}
+  UAT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN: ${{ secrets.UAT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN }}
+  MOCKLAB_TOKEN: ${{ secrets.MOCKLAB_TOKEN }}
+  JIRA_USER: ${{ secrets.JIRA_USER }}
+  JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+  JIRA_BOARD_ID: '69'
+  SAMPLE_SLACK_WEBHOOK: ${{ secrets.SAMPLE_SLACK_WEBHOOK }}
+  SAMPLE_UAT_OKTA_PASSWORD_BIOINFORMATICIAN: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_BIOINFORMATICIAN }}
+  SAMPLE_UAT_OKTA_PASSWORD_AR_REVIEWER: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_AR_REVIEWER }}
+  SAMPLE_UAT_OKTA_PASSWORD_ADMIN: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_ADMIN }}
+  SAMPLE_UAT_OKTA_AUTH_ISSUER_URL: ${{ secrets.SAMPLE_UAT_OKTA_AUTH_ISSUER_URL }}
+  SAMPLE_UAT_INTERNAL_URL: ${{ secrets.SAMPLE_UAT_INTERNAL_URL }}
+  SAMPLE_INT_OKTA_PASSWORD_PATHOLOGY_REPORT_VIEWER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_PATHOLOGY_REPORT_VIEWER }}
+  SAMPLE_INT_OKTA_PASSWORD_PATHOLOGY_REPORT_UPLOADER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_PATHOLOGY_REPORT_UPLOADER }}
+  SAMPLE_INT_OKTA_PASSWORD_LPO_ALLIANCE: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_LPO_ALLIANCE }}
+  SAMPLE_INT_OKTA_PASSWORD_LPO_TT: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_LPO_TT }}
+  SAMPLE_INT_OKTA_PASSWORD_LPO_MSP: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_LPO_MSP }}
+  SAMPLE_INT_OKTA_PASSWORD_LPO_TT_MSP: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_LPO_TT_MSP }}
+  SAMPLE_INT_OKTA_PASSWORD_CLIA_REPORT_VIEWER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_CLIA_REPORT_VIEWER }}
+  SAMPLE_INT_OKTA_PASSWORD_CLIA_REPORT_UPLOADER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_CLIA_REPORT_UPLOADER }}
+  SAMPLE_INT_OKTA_PASSWORD_BIOINFORMATICIAN: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_BIOINFORMATICIAN }}
+  SAMPLE_INT_OKTA_PASSWORD_AR_REVIEWER: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_AR_REVIEWER }}
+  SAMPLE_INT_OKTA_PASSWORD_ADMIN: ${{ secrets.SAMPLE_INT_OKTA_PASSWORD_ADMIN }}
+  SAMPLE_INT_OKTA_AUTH_ISSUER_URL: ${{ secrets.SAMPLE_INT_OKTA_AUTH_ISSUER_URL }}
+  SAMPLE_INT_INTERNAL_URL: ${{ secrets.SAMPLE_INT_INTERNAL_URL }}
+  TPS_UAT_OKTA_AUTH_ISSUER_URL: ${{ secrets.TPS_UAT_OKTA_AUTH_ISSUER_URL }}
+  TPS_UAT_OKTA_CLIENT_ID_ADMINISTRATOR: ${{ secrets.TPS_UAT_OKTA_CLIENT_ID_ADMINISTRATOR }}
+  TPS_UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR: ${{ secrets.TPS_UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR }}
+  SAMPLE_BDD_TESTING_TIER: 'int'
+  SAMPLE_INT_OKTA_USERNAME_ADMIN: 'combo_administrator@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_AR_REVIEWER: 'combo_assignment_reviewer@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_BIOINFORMATICIAN: 'combo_bioinformatician@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_CLIA_REPORT_UPLOADER: 'combo_test_clia_report_uploader@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_CLIA_REPORT_VIEWER: 'combo_test_clia_report_viewer@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_LPO_ALLIANCE: 'combo_test_lpo@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_LPO_TT: 'combo_test_lpo_ecog_tt@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_LPO_MSP: 'combo_test_lpo_ecog_msp@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_LPO_TT_MSP: 'combo_test_lpo_ecog_tt_msp@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_PATHOLOGY_REPORT_UPLOADER: 'combo_test_pathology_report_uploader@bioappdev.org'
+  SAMPLE_INT_OKTA_USERNAME_PATHOLOGY_REPORT_VIEWER: 'combo_test_pathology_report_viewer@bioappdev.org'
+  SAMPLE_UAT_OKTA_USERNAME_ADMIN: 'combo_administrator@bioappdev.org'
+  SAMPLE_UAT_OKTA_USERNAME_AR_REVIEWER: 'combo_assignment_reviewer@bioappdev.org'
+  SAMPLE_UAT_OKTA_USERNAME_BIOINFORMATICIAN: 'combo_bioinformatician@bioappdev.org'
+  MOCKLAB_URL_THIRD_PARTY: 'http://THIRD_PARTY.wiremockapi.cloud'
+  MOCKLAB_URL_MIDDLEWARE: 'http://middleware-for-sample.wiremockapi.cloud'
+  MOCKLAB_URL_NOTIFICATION: 'http://notification-api.wiremockapi.cloud'
+  MOCKLAB_URL_TP_FOR_CM: 'http://treatment-protocol-for-sample.wiremockapi.cloud'
+  TEST_ENV: 'int'
+  PROJECT_NAME: 'sample'
+  BROWSER: ${{ github.event.client_payload.BROWSER || 'chromeHeadless' }}
+  LOG_LEVEL: ${{ github.event.client_payload.LOG_LEVEL || 'debug' }}
+  TEST_LOCATION: ${{ github.event.client_payload.TEST_LOCATION || 'not set' }}
+
+jobs:
+  debug_test_by_location:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      deploy_to_uat: ${{ steps.setup_env_and_check_payload.outputs.deploy_to_uat }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Ruby version with RVM and install gems with cache
+        uses: ruby/setup-ruby@a4effe49ee8ee5b8b5091268c473a4628afb5651
+        with:
+          ruby-version: '3.0.6'
+          bundler-cache: true
+
+      - name: configure aws credentials
+        id: int_creds
+        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
+        with:
+          role-to-assume: arn:aws:iam::${{secrets.INT_AWS_ACCOUNT}}:role/${{secrets.INT_AWS_ROLE}}
+          aws-region: ${{ secrets.AWS_REGION }}
+          output-credentials: true
+
+      - name: Setting AWS ENV variables
+        run: |
+          echo AWS_ACCESS_KEY_ID="${{ steps.int_creds.outputs.aws-access-key-id }}" >> $GITHUB_ENV
+          echo AWS_SECRET_ACCESS_KEY="${{ steps.int_creds.outputs.aws-secret-access-key }}" >> $GITHUB_ENV
+          echo AWS_SESSION_TOKEN="${{ steps.int_creds.outputs.aws-session-token }}" >> $GITHUB_ENV
+          echo INT_AWS_ACCESS_KEY_ID="${{ steps.int_creds.outputs.aws-access-key-id }}" >> $GITHUB_ENV
+          echo INT_AWS_SECRET_ACCESS_KEY="${{ steps.int_creds.outputs.aws-secret-access-key }}" >> $GITHUB_ENV
+          echo INT_AWS_SESSION_TOKEN="${{ steps.int_creds.outputs.aws-session-token }}" >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+
+      - name: Setup the environment for UI headless test in Ubuntu and Check client_payload values
+        id: setup_env_and_check_payload
+        run: |
+          source scripts/source_all.sh
+          download_data_setup_folder
+          echo "## **Workflow Input:**" >> "$GITHUB_STEP_SUMMARY"
+          echo "#### **TEST_LOCATION**: $TEST_LOCATION" >> "$GITHUB_STEP_SUMMARY"
+          echo "#### **BROWSER**: $BROWSER" >> "$GITHUB_STEP_SUMMARY"
+          echo "#### **LOG_LEVEL**: $LOG_LEVEL" >> "$GITHUB_STEP_SUMMARY"
+          setup_ubuntu_headless
+          if [[ "$BROWSER" == 'chromeHeadless' ]]; then install_chrome_browser; fi
+
+      - name: Setup geckodriver
+        if: ${{ env.BROWSER == 'firefoxHeadless' }}
+        uses: browser-actions/setup-geckodriver@eb8b0670366f719ca31703766a8cb7e3ea2c56ed
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: install MS Edge
+        if: ${{ env.BROWSER == 'edge' }}
+        uses: browser-actions/setup-edge@5a55d8fc0f012aa6e16b582df5bf9d6274bda7da
+
+      - name: Run test
+        run: |
+          source scripts/source_all.sh
+          npm install
+          ci_cuc_setup_results_directory
+          setup_nightwatch "test_config/int_ci.sh" "$BROWSER"
+          ci_cuc_run_by_location "$TEST_LOCATION"

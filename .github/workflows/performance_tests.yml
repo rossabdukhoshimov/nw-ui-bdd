@@ -1,0 +1,90 @@
+name: Performance Tests
+
+on:
+  repository_dispatch:
+    types: [perf_tests]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 0'  # Runs at 11:00 PM EST every Saturday
+    - cron: '0 6 9 5 *'   # One-time run: May 9 at 6:00 UTC (May 9 at 2 AM EDT)
+
+
+env:
+  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+  SAMPLE_SLACK_WEBHOOK: ${{ secrets.SAMPLE_SLACK_WEBHOOK }}
+  AWS_DEFAULT_REGION: 'us-east-1'
+  UAT_OKTA_CLIENT_ID_ADMINISTRATOR: ${{ secrets.UAT_OKTA_CLIENT_ID_ADMINISTRATOR }}
+  UAT_OKTA_CLIENT_ID_AR_REVIEWER: ${{ secrets.UAT_OKTA_CLIENT_ID_AR_REVIEWER }}
+  UAT_OKTA_CLIENT_ID_BIOINFORMATICIAN: ${{ secrets.UAT_OKTA_CLIENT_ID_BIOINFORMATICIAN }}
+  UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR: ${{ secrets.UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR }}
+  UAT_OKTA_CLIENT_SECRET_AR_REVIEWER: ${{ secrets.UAT_OKTA_CLIENT_SECRET_AR_REVIEWER }}
+  UAT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN: ${{ secrets.UAT_OKTA_CLIENT_SECRET_BIOINFORMATICIAN }}
+  SAMPLE_UAT_OKTA_PASSWORD_BIOINFORMATICIAN: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_BIOINFORMATICIAN }}
+  SAMPLE_UAT_OKTA_PASSWORD_AR_REVIEWER: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_AR_REVIEWER }}
+  SAMPLE_UAT_OKTA_PASSWORD_ADMIN: ${{ secrets.SAMPLE_UAT_OKTA_PASSWORD_ADMIN }}
+  SAMPLE_UAT_OKTA_AUTH_ISSUER_URL: ${{ secrets.SAMPLE_UAT_OKTA_AUTH_ISSUER_URL }}
+  SAMPLE_UAT_INTERNAL_URL: ${{ secrets.SAMPLE_UAT_INTERNAL_URL }}
+  TPS_UAT_OKTA_AUTH_ISSUER_URL: ${{ secrets.TPS_UAT_OKTA_AUTH_ISSUER_URL }}
+  TPS_UAT_OKTA_CLIENT_ID_ADMINISTRATOR: ${{ secrets.TPS_UAT_OKTA_CLIENT_ID_ADMINISTRATOR }}
+  TPS_UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR: ${{ secrets.TPS_UAT_OKTA_CLIENT_SECRET_ADMINISTRATOR }}
+  SAMPLE_BDD_TESTING_TIER: 'uat'
+  SAMPLE_UAT_OKTA_USERNAME_ADMIN: 'combo_administrator@bioappdev.org'
+  SAMPLE_UAT_OKTA_USERNAME_AR_REVIEWER: 'combo_assignment_reviewer@bioappdev.org'
+  SAMPLE_UAT_OKTA_USERNAME_BIOINFORMATICIAN: 'combo_bioinformatician@bioappdev.org'
+  TEST_ENV: 'uat'
+  TEST_RUN_NAME: 'perf_tests'
+
+jobs:
+
+  performance_tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Common Setup
+        uses: ./.github/actions/setup_common
+        with:
+          install-nodejs: 'true'
+          int-aws-account-id: ${{ secrets.INT_AWS_ACCOUNT }}
+          int-aws-role-name: ${{ secrets.INT_AWS_ROLE }}
+          uat-aws-account-id: ${{ secrets.UAT_AWS_ACCOUNT }}
+          uat-aws-role-name: ${{ secrets.UAT_AWS_ROLE }}
+
+      - name: Run tests
+        id: run_tests
+        run: |
+          source scripts/source_all.sh
+          source performance_test/run.sh
+          download_data_setup_folder
+          load_perf_seed_data
+          setup_VR_AR_perf_seed_data
+          ci_cuc_setup_results_directory
+          echo "RESULT_PATH=$RESULT_PATH" >> $GITHUB_ENV
+          setup_nightwatch "test_config/performance.sh"
+          ci_cuc_reset_test_run "$TEST_RUN_NAME" "performance_tests"
+          ci_cuc_test_run_in_parallel "$TEST_RUN_NAME" 1
+        continue-on-error: true
+
+      - name: Summarize Regression tests
+        if: ${{ steps.run_tests.outcome != 'canceled' }}
+        run: |
+          source scripts/source_all.sh
+          source performance_test/run.sh
+          BUILD_LINK=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          slack_perf_report $BUILD_LINK
+          report=$(ci_cuc_markdown_test_report "$TEST_RUN_NAME")
+          echo "$report" >> "$GITHUB_STEP_SUMMARY"
+          perf_report=$(perf_report)
+          echo "$perf_report" >> "$GITHUB_STEP_SUMMARY"
+          TEST_PASSED=$(ci_cuc_test_run_passed "$TEST_RUN_NAME")
+          if [[ $TEST_PASSED != "true" ]]; then
+            echo "There are failures in $TEST_RUN_NAME"
+            exit 1
+          fi
+
+        
