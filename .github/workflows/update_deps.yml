@@ -35,7 +35,7 @@ jobs:
           npm install --package-lock=false
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@a4effe49ee8ee5b8b5091268c473a4628afb5651
+        uses: ruby/setup-ruby@v3
         with:
           ruby-version: 3.4.4 # adjust to match your project
           bundler-cache: false

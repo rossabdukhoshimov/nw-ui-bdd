@@ -7,8 +7,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE:-$0}")" &> /dev/null && pwd)"
 # export SCRIPT_DIR=$(dirname -- "$(find "$PROJECT_ROOT" -name "source_all.sh" -print -quit)")
 
 
-source "$SCRIPT_DIR/data_setup.sh"
-source "$SCRIPT_DIR/jira_functions.sh"
 source "$SCRIPT_DIR/test_run.sh"
 source "$SCRIPT_DIR/cicd_functions.sh"
 source "$SCRIPT_DIR/ci_cucumber.sh"

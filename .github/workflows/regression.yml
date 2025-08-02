@@ -35,7 +35,7 @@ on:
 
 
 env:
-  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+  GIT_TOKEN: ${{ secrets.TOKEN }}
   SAMPLE_SLACK_WEBHOOK: ${{ secrets.SAMPLE_SLACK_WEBHOOK }}
   BROWSER: ${{ github.event.inputs.browser || github.event.client_payload.BROWSER || 'chromeHeadless' }}
   FORCE_RUN_TESTS: ${{ github.event.inputs.force_run_tests || github.event.client_payload.FORCE_RUN_TESTS || 'FALSE' }}
@@ -44,7 +44,7 @@ env:
   RUN_FAILED_TESTS_ONLY: ${{ github.event.inputs.run_failed_tests_only || github.event.client_payload.RUN_FAILED_TESTS_ONLY || 'FALSE' }}
   JIRA_USER: ${{ secrets.JIRA_USER }}
   JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
-  JIRA_BOARD_ID: '69'
+  JIRA_BOARD_ID: 'XX'
   REGRESSION_TAG: 'regression_ui'
   STANDALONE_REGRESSION_TAG: 'standalone_regression_ui'
 

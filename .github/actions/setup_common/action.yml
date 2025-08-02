@@ -75,7 +75,7 @@ runs:
   steps:
     - name: Install Ruby
       if: ${{ inputs.install-ruby == 'true' }}
-      uses: ruby/setup-ruby@a4effe49ee8ee5b8b5091268c473a4628afb5651
+      uses: ruby/setup-ruby@v3
       with:
         ruby-version: ${{ inputs.ruby-version }}
         bundler-cache: true
@@ -109,18 +109,18 @@ runs:
 
     - name: Setup geckodriver
       if: ${{ inputs.install-gecko == 'true' }}
-      uses: browser-actions/setup-geckodriver@eb8b0670366f719ca31703766a8cb7e3ea2c56ed
+      uses: browser-actions/setup-geckodriver@v3
       with:
         token: ${{ inputs.git-token }}
 
     - name: install MS Edge
       if: ${{ inputs.install-edge == 'true' }}
-      uses: browser-actions/setup-edge@5a55d8fc0f012aa6e16b582df5bf9d6274bda7da
+      uses: browser-actions/setup-edge@v4
 
     - name: configure UAT AWS credentials
       if: ${{ inputs.uat-aws-account-id != '' && inputs.uat-aws-role-name != '' }}
       id: aws_creds_uat
-      uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
+      uses: aws-actions/configure-aws-credentials@v3
       with:
         role-to-assume: ${{ 'arn:aws:iam::' }}${{ inputs.uat-aws-account-id }}${{ ':role/' }}${{ inputs.uat-aws-role-name }}
         aws-region: ${{ inputs.aws-region }}
@@ -153,7 +153,7 @@ runs:
     - name: configure INT AWS credentials
       if: ${{ inputs.int-aws-account-id != '' && inputs.int-aws-role-name != '' }}
       id: aws_creds_int
-      uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
+      uses: aws-actions/configure-aws-credentials@v3
       with:
         role-to-assume: ${{ 'arn:aws:iam::' }}${{ inputs.int-aws-account-id }}${{ ':role/' }}${{ inputs.int-aws-role-name }}
         aws-region: ${{ inputs.aws-region }}

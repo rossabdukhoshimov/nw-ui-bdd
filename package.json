@@ -1,35 +1,22 @@
 {
-  "name": "sample_ui_bddtests",
+  "name": "nightwatch_ui_bdd",
   "version": "1.0.0",
   "description": "Nightwatch UI tests for Sample project",
   "private": true,
   "main": "index.js",
   "scripts": {
-    "test": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=$BROWSER TEST_ENV=int BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/feature_files --require features/step_definitions --require features/support --require cucumber.conf.js -t @this --format junit:$RESULT_PATH/cucumber-result-$BROWSER.xml --publish CUCUMBER_PUBLISH_ENABLED=false --no-strict --retry 0",
-    "smoke": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=$BROWSER TEST_ENV=uat BASE_URL=$BASE_URL_UAT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @smoke --format json:$RESULT_PATH/cucumber-output-$BROWSER.json --publish CUCUMBER_PUBLISH_ENABLED=false --no-strict --retry 0",
-    "int:nightwatch": "cross-env PAUSE_TIMEOUT=1000 TEST_LOCATION=travis NIGHTWATCH_ENV=$BROWSER TEST_ENV=int BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t \"$CUCUMBER_TAGS\" --format json:$RESULT_PATH/cucumber-output-$BROWSER.json --no-strict --retry 1 --parallel=4",
-    "uat:nightwatch": "cross-env PAUSE_TIMEOUT=1000 TEST_LOCATION=travis NIGHTWATCH_ENV=$BROWSER TEST_ENV=uat BASE_URL=$BASE_URL_UAT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t \"$CUCUMBER_TAGS\" --format json:$RESULT_PATH/cucumber-output-$BROWSER.json --no-strict --retry 1",
-    "int:edge": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=edge BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @ui_test  --format json:$RESULT_PATH/chrome.json --no-strict --retry 1",
-    "int:chromeHeadless": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=chromeHeadless BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @ui_test  --format json:$RESULT_PATH/chrome.json --no-strict --retry 1",
-    "int:firefox": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=firefox BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @ui_test --format json:$RESULT_PATH/firefox.json --no-strict --retry 1",
-    "int:firefoxHeadless": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=firefoxHeadless BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @ui_test --format json:$RESULT_PATH/firefox.json --no-strict --retry 1",
-    "test:pickFirefox": "NIGHTWATCH_ENV=firefoxHeadless ./node_modules/.bin/cucumber-js  --format json:$RESULT_PATH/test_results.json features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js --publish CUCUMBER_PUBLISH_ENABLED=false -t",
-    "int:debug": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=firefoxHeadless BASE_URL=$BASE_URL_INT/ downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @ui_test  --format json:$RESULT_PATH/chrome.json --no-strict",
-    "int:safari": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=safari BASE_URL=$BASE_URL_INT downloadFilePath=$ROOT/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @ui_test  --format json:$RESULT_PATH/chrome.json --no-strict --retry 1",
-    "int:local": "cross-env PAUSE_TIMEOUT=1000 TEST_LOCATION=local NIGHTWATCH_ENV=chrome TEST_ENV=int BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @local --format json:$RESULT_PATH/cucumber-output-chrome.json --no-strict --retry 0",
-    "uat:local": "cross-env PAUSE_TIMEOUT=1000 TEST_LOCATION=local NIGHTWATCH_ENV=chromeHeadless TEST_ENV=uat BASE_URL=$BASE_URL_UAT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @local --format json:$RESULT_PATH/cucumber-output-chrome.json --no-strict --retry 0",
-    "axe": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=$BROWSER TEST_ENV=int BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/**/*.feature --require features/step_definitions --require features/support --require cucumber.conf.js -t @axe --format json:$RESULT_PATH/cucumber-output-$BROWSER.json --no-strict --retry 0"
+    "test": "cross-env PAUSE_TIMEOUT=1000 NIGHTWATCH_ENV=$BROWSER TEST_ENV=int BASE_URL=$BASE_URL_INT downloadFilePath=$PROJECT_ROOT/nightwatch/downloads/ ./node_modules/.bin/cucumber-js features/feature_files --require features/step_definitions --require features/support --require cucumber.conf.js -t @this --format junit:$RESULT_PATH/cucumber-result-$BROWSER.xml --publish CUCUMBER_PUBLISH_ENABLED=false --no-strict --retry 0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ORG_NAME/test-sample-ui-bddtests.git"
+    "url": "git+https://github.com/rossabdukhoshimov/nw-ui-bdd.git"
   },
-  "author": "Li Wang",
+  "author": "Khamroz Abdukhoshimov",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ORG_NAME/test-sample-ui-bddtests/issues"
+    "url": "https://github.com/rossabdukhoshimov/nw-ui-bdd/issues"
   },
-  "homepage": "https://github.com/ORG_NAME/test-sample-ui-bddtests#readme",
+  "homepage": "https://github.com/rossabdukhoshimov/nw-ui-bdd#readme",
   "engines": {
     "node": ">=20 <23 || >=24",
     "npm": ">=10"

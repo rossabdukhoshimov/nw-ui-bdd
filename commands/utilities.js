@@ -5,7 +5,7 @@ function splitParam(string, separator = ',') {
     return result.map(item => item.trim());
 }
 
-function comboTodayDateString(useUTC = false) {
+function todayDateString(useUTC = false) {
     if (useUTC) {
         let dt = new Date().toUTCString().split(' ');
         let onlyDate = new Date().getUTCDate();
@@ -38,6 +38,6 @@ function runShell(command, params) {
 }
 module.exports = {
     splitParam,
-    comboTodayDateString,
+    todayDateString,
     runShell,
 }

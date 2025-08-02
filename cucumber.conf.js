@@ -49,17 +49,6 @@ After(async function (testCase) {
     }
     const testNameAlphaNumeric = alphaNumericOnly(cuc.scenarioName(testCase, true));
     const filePath = `${__dirname}/results/screenshots/${testNameAlphaNumeric}.png`;
-    // const oldJsonFilePath = 'results/axe_results/axe_failure_list.json';
-    // const newJsonFilePath = `results/axe_results/${testNameAlphaNumeric}.json`;
-    // if (fs.existsSync(oldJsonFilePath)) {
-    //     fs.rename(oldJsonFilePath, newJsonFilePath, function (err) {
-    //         if (err) {
-    //             log.error(err, false);
-    //             return;
-    //         }
-    //         log.debug('The file has been re-named to: ' + newJsonFilePath);
-    //     });
-    // }
     if (cuc.isScenarioFailed(testCase))
         await takeScreenshot(filePath);
     else

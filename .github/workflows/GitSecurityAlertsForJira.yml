@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Sync security alerts to Jira issues"
-        uses: reload/github-security-jira@dcbf566c2462a7432e03900a447c68cfd6213d26
+        uses: reload/github-security-jira@v4
         env:
-          GH_SECURITY_TOKEN: '${{ secrets.GH_SECURITY_TOKEN }}'
+          GH_SECURITY_TOKEN: '${{ secrets.TOKEN }}'
           JIRA_TOKEN: '${{ secrets.JIRA_TOKEN }}'
           JIRA_HOST: '${{ secrets.JIRA_HOST }}'
           JIRA_USER: '${{ secrets.JIRA_USER }}'
           JIRA_PROJECT: 'CBME'
           JIRA_ISSUE_LABELS: '${{ secrets.JIRA_ISSUE_LABELS }}'
           JIRA_ISSUE_TYPE: ${{ secrets.JIRA_ISSUE_TYPE }}
-          JIRA_WATCHERS: patrick.leblanc@bioappdev.org,christina.coppola@bioappdev.org
+          JIRA_WATCHERS: some@email.com
           JIRA_RESTRICTED_COMMENT_ROLE: '${{ secrets.JIRA_RESTRICTED_COMMENT_ROLE }}'
           SYNC_DIRECTION: 'gh2jira'

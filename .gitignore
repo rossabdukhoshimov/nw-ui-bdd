@@ -1,0 +1,11 @@
+node_modules/*
+package-lock.json
+.bundle/*
+vendor/*
+Gemfile.lock
+.idea/*
+.DS_Store
+chromedriver.log
+geckodriver.log
+edgedriver.log
+.node_modules/*
