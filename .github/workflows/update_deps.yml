@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  GIT_TOKEN: ${{ secrets.GH_SECURITY_TOKEN }}
+  GIT_TOKEN: ${{ secrets.TOKEN }}
 
 permissions:
   contents: write

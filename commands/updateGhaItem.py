@@ -20,7 +20,7 @@ def update_github_secret(secret_name, encrypted_value, key_id):
         print("Error: GH_WORKFLOW_TOKEN is not set.")
         return
 
-    url = f"https://api.github.com/repos/ORG_NAME/test-sample-ui-bddtests/actions/secrets/{secret_name}"
+    url = f"https://api.github.com/repos/rossabdukhoshimov/nw-ui-bdd/actions/secrets/{secret_name}"
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github.v3+json"

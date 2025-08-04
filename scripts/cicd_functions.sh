@@ -217,7 +217,7 @@ function markdown_var_chart() {
 function gha_build_link () {
   if [[ -z "$1" ]]; then echo 'Expected the 1st argument (Repo Name), Found 0' && return 1; fi
   if [[ -z "$2" ]]; then echo 'Expected the 2nd argument (YML File Name), Found 0' && return 1; fi
-  base_url='https://github.com/ORG_NAME'
+  base_url='https://github.com/rossabdukhoshimov'
   workflow_path='actions/workflows'
   repo="$1"
   yml_file="$2"
@@ -229,7 +229,7 @@ function trigger_gha_build() {
   if [[ -z "$1" ]]; then echo 'Expected the 1st argument (Repo Name), Found 0' && return 1; fi
   if [[ -z "$2" ]]; then echo 'Expected the 2nd argument (Event Type), Found 0' && return 1; fi
   if [[ -n "$3" ]]; then CLIENT_PAYLOAD="$3"; else CLIENT_PAYLOAD="{}"; fi
-  curl --location "https://api.github.com/repos/ORG_NAME/$1/dispatches" \
+  curl --location "https://api.github.com/repos/rossabdukhoshimov/$1/dispatches" \
   --header 'Accept: application/vnd.github+json' \
   --header "Authorization: Bearer $GIT_TOKEN" \
   --header 'Content-Type: application/json' \
