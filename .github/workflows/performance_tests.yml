@@ -4,9 +4,9 @@ on:
   repository_dispatch:
     types: [perf_tests]
   workflow_dispatch:
-  schedule:
-    - cron: '0 4 * * 0'  # Runs at 11:00 PM EST every Saturday
-    - cron: '0 6 9 5 *'   # One-time run: May 9 at 6:00 UTC (May 9 at 2 AM EDT)
+  # schedule:
+  #   - cron: '0 4 * * 0'  # Runs at 11:00 PM EST every Saturday
+  #   - cron: '0 6 9 5 *'   # One-time run: May 9 at 6:00 UTC (May 9 at 2 AM EDT)
 
 
 env:

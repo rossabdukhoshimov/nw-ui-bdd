@@ -30,8 +30,8 @@ on:
         required: false
         type: string
         default: 'chromeHeadless'
-  schedule:
-    - cron: '0 6 * * 1-5'  # CodePush Regression, Every weekday at 2 am EST
+  # schedule:
+  #   - cron: '0 6 * * 1-5'  # CodePush Regression, Every weekday at 2 am EST
 
 
 env:

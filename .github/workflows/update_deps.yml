@@ -3,8 +3,8 @@ name: Update Dependencies (Node + Ruby)
 on:
   repository_dispatch:
     types: [ update_deps ]
-  schedule:
-    - cron: '0 3 * * 1'
+  # schedule:
+  #   - cron: '0 3 * * 1'
   workflow_dispatch:
 
 env:
